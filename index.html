@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#17251f">
+<title>Everest Base Camp · Checklist</title>
+<style>
+:root{--bg:#f4f5f1;--card:#fff;--ink:#1e2924;--muted:#68756e;--line:#dfe5df;--accent:#244b3a;--soft:#edf3ee;--warn:#fff0e7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,sans-serif}
+header{background:#17251f;color:white;padding:24px 18px}
+header div,main{max-width:900px;margin:auto}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#c1d3c7;font-weight:700}
+h1{font-size:1.6rem;margin:8px 0}
+header p{margin:0;color:#d6e1d9;font-size:.92rem}
+main{padding:16px 12px 40px}
+.summary,.group{background:var(--card);border:1px solid var(--line);border-radius:15px;margin-bottom:13px}
+.summary{padding:16px}
+.progressline{display:flex;justify-content:space-between;font-size:.9rem;font-weight:650;gap:10px}
+.track{height:8px;background:#e6ebe6;border-radius:99px;overflow:hidden;margin:10px 0 14px}
+.bar{height:100%;width:0;background:var(--accent);transition:width .15s}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.btn,select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:white;color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}
+.btn.primary{background:var(--accent);color:white}
+.note{font-size:.8rem;color:var(--muted);margin-bottom:0}
+.group h2{font-size:1rem;margin:0;padding:14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.group h3{font-size:.88rem;margin:0;padding:12px 14px 5px;color:var(--accent)}
+.count{font-size:.78rem;font-weight:400;color:var(--muted);white-space:nowrap}
+.item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid #edf0ed;cursor:pointer}
+.item:last-child{border-bottom:0}
+.item input{width:21px;height:21px;flex:0 0 21px;margin:1px 0 0;accent-color:var(--accent)}
+.item span{flex:1;font-size:.91rem}
+.item.done span{text-decoration:line-through;color:#839087}
+.tag{font-size:.65rem;font-weight:750;text-transform:uppercase;border-radius:5px;padding:3px 5px;white-space:nowrap}
+.urgent{background:var(--warn);color:#9a4d20}
+.soon{background:var(--soft);color:#315d43}
+.optional{background:#f0f1f3;color:#626a72}
+.subnote{font-size:.8rem;color:var(--muted);padding:0 14px 10px}
+footer{text-align:center;color:var(--muted);font-size:.78rem;padding:10px 12px 30px}
+@media(max-width:560px){.item{gap:8px;padding:11px}.tag{font-size:.58rem}.controls>*{flex:1}.group h2{font-size:.95rem}}
+</style>
+</head>
+<body>
+<header><div><div class="eyebrow">Viaje · Octubre / noviembre 2026</div><h1>Everest Base Camp</h1><p>Checklist de preparación · Salida prevista: 21 de octubre</p></div></header>
+<main>
+<section class="summary">
+ <div class="progressline"><span>Progreso total</span><span id="progressText">0 tareas</span></div>
+ <div class="track"><div class="bar" id="progressBar"></div></div>
+ <div class="controls">
+  <select id="filter" aria-label="Filtrar tareas"><option value="all">Todas las tareas</option><option value="urgent">Solo urgentes</option><option value="pending">Solo pendientes</option><option value="done">Completadas</option></select>
+  <button class="btn primary" id="export">Exportar progreso</button>
+  <button class="btn" id="importBtn">Importar progreso</button>
+  <input id="importFile" type="file" accept="application/json,.json" hidden>
+  <button class="btn" id="reset">Reiniciar</button>
+ </div>
+ <p class="note" id="storageNote">El progreso se guarda en este navegador. Para pasarlo a otro dispositivo, exporta e importa el archivo JSON.</p>
+</section>
+<div id="checklist"></div>
+</main>
+<footer>Prioridades: seguro de altura y rescate, consulta médica, documentación y equipo crítico.</footer>
+<script>
+const groups = [
+{title:"0. Farmacia y botiquín",subgroups:[
+ {title:"Comprar",items:[
+  ["Paracetamol","soon"],
+  ["Apósitos hidrocoloides específicos para ampollas","urgent"],
+  ["Esparadrapo o cinta para prevenir rozaduras","urgent"],
+  ["Antiséptico cutáneo pequeño","soon"],
+  ["Bálsamo labial SPF 30–50","urgent"],
+  ["Crema antifricción para pies (si no tengo una alternativa)","soon"],
+  ["Bolsas herméticas pequeñas para proteger los medicamentos","soon"],
+  ["Gel hidroalcohólico pequeño","soon"],
+  ["Tiritas normales, solo si no tengo","optional"]
+ ]},
+ {title:"Comprobar que realmente tengo y que no está caducado",items:[
+  ["Sales de rehidratación oral","soon"],
+  ["Loperamida","soon"],
+  ["Antiemético para náuseas: revisar nombre, caducidad y si es adecuado","soon"],
+  ["Gasas estériles","soon"],
+  ["Vendas","soon"],
+  ["Protector solar SPF 50+","urgent"],
+  ["Pastillas/sistema de potabilización de agua y cantidad suficiente","urgent"],
+  ["Liner o sábana interior para el saco de dormir (comprado; comprobar que está guardado)","soon"]
+ ]},
+ {title:"Consultar con el médico",items:[
+  ["Acetazolamida (Edemox/Diamox): si está indicada, pauta y contraindicaciones","urgent"],
+  ["Probióticos/fermentos: si tienen sentido para prevenir diarrea del viajero","soon"],
+  ["Recomendaciones para diarrea del viajero y cuándo buscar atención médica","soon"]
+ ]}
+]},
+{title:"1. Seguro y salud",items:[
+ ["Contratar seguro que cubra trekking hasta al menos 5.600 m y rescate en helicóptero","urgent"],
+ ["Revisar las exclusiones, franquicia, evacuación y teléfono de asistencia del seguro","urgent"],
+ ["Consulta médica: mal de altura y acetazolamida","urgent"],
+ ["Consultar si conviene tomar probióticos antes del viaje","soon"],
+ ["Revisar vacunas y recomendaciones sanitarias para Nepal con un profesional","urgent"],
+ ["Preparar botiquín y revisar caducidades de todos los medicamentos","soon"],
+ ["Guardar teléfonos de emergencia y asistencia también sin conexión","urgent"],
+ ["Comprobar que el seguro cubre las fechas completas del viaje, incluido el regreso","urgent"]
+]},
+{title:"2. Ropa y calzado · planificar la semana que viene",description:"Esta sección queda deliberadamente pendiente. Haremos dos listas: llevar desde casa y comprar/alquilar en Thamel. No comprar ropa adicional hasta revisar el equipo actual.",items:[
+ ["Crear lista de ropa y calzado que llevaré desde casa","soon"],
+ ["Crear lista de ropa/equipo que compraré o alquilaré en Thamel","soon"],
+ ["Probar el calzado con calcetines de trekking y comprobar que no roce","urgent"]
+]},
+{title:"3. Equipo y accesorios",items:[
+ ["Comprobar pastillas potabilizadoras: instrucciones, caducidad y cantidad","urgent"],
+ ["Comprobar baterías portátiles (powerbanks) y cargarlas","soon"],
+ ["Comprobar que llevo el adaptador de corriente compatible","soon"],
+ ["Llevar la herramienta para abrir la ranura SIM","soon"],
+ ["Comprobar frontal y batería/pilas de repuesto","urgent"],
+ ["Preparar protector solar SPF 50+ y bálsamo labial SPF","urgent"],
+ ["Preparar toalla de microfibra, papel higiénico y gel hidroalcohólico","soon"],
+ ["Llevar dos botellas reutilizables de aproximadamente 1 litro o capacidad equivalente","soon"],
+ ["Confirmar el saco de dormir: precio indicado de 36 USD, temperatura de confort e higiene","urgent"],
+ ["Confirmar bolsa del porteador, peso máximo por persona y límites del vuelo a Lukla","urgent"],
+ ["Comprobar mochila Gregory Stout de 45 L y preparar mochila de día de unos 5–6 kg","soon"],
+ ["Comprar el liner para el saco de dormir (marcar completado si ya está comprado y guardado)","soon"],
+ ["Decidir con WeRoad si hacen falta bastones o microcrampones; no comprarlos sin confirmar","optional"],
+ ["Llevar bolsas impermeables/estancas para documentos, electrónica y ropa seca","soon"]
+]},
+{title:"4. Visado y documentos",items:[
+ ["Comprobar validez del pasaporte y páginas disponibles","urgent"],
+ ["Preparar/tramitar el visado de Nepal y guardar justificante","urgent"],
+ ["Verificar requisitos de entrada según nacionalidad","urgent"],
+ ["Guardar póliza y teléfono de asistencia offline","urgent"],
+ ["Descargar vuelos, reservas e itinerario de WeRoad","urgent"],
+ ["Guardar copia offline del pasaporte y documentos importantes","soon"],
+ ["Guardar localizadores de vuelos y datos de contacto de alojamientos","soon"],
+ ["Comprobar límites de equipaje y normas de equipaje de mano para medicamentos/baterías","soon"]
+]},
+{title:"5. Dinero y conectividad",items:[
+ ["Preparar efectivo y tarjetas alternativas, avisando al banco si fuera necesario","soon"],
+ ["Presupuestar comidas, agua, duchas, propinas y extras","soon"],
+ ["Elegir una opción de conexión: SIM local o eSIM","soon"],
+ ["Descargar mapas offline de Katmandú y la ruta/zonas relevantes","soon"],
+ ["Descargar traductor y documentos que necesite consultar sin internet","optional"],
+ ["Confirmar si el Snow Lion Hotel guarda equipaje durante el trekking","soon"],
+ ["Comprobar comisiones y acceso a dinero en efectivo; llevar una reserva separada","soon"]
+]},
+{title:"6. Preparación final y logística",items:[
+ ["Ver cómo llegar del aeropuerto al hotel y confirmar si hay traslado incluido","urgent"],
+ ["Buscar lugares para comer cerca del hotel y opciones prácticas para los días libres","optional"],
+ ["Localizar tiendas de trekking en Thamel y anotar qué compras quedan pendientes","soon"],
+ ["Preparar entretenimiento para el avión y descargar contenido offline","optional"],
+ ["Preparar lista de instrucciones para que Dany cuide las plantas durante mi ausencia","soon"],
+ ["Confirmar punto de encuentro y traslado a Manthali, si aplica al vuelo a Lukla","urgent"],
+ ["Confirmar con WeRoad horario y lugar de reunión del grupo","urgent"],
+ ["Revisar previsión meteorológica y condiciones de vuelos de montaña antes de salir","soon"],
+ ["Probar las capas juntas y caminar con el equipo antes del viaje","urgent"],
+ ["Compartir itinerario y contacto del coordinador con una persona de confianza","optional"],
+ ["Dejar margen en el itinerario y confirmar el plan alternativo si se retrasa el vuelo de Lukla","soon"]
+]}
+];
+const key="ebcChecklist2026_v3";
+let checked={};
+try{checked=JSON.parse(localStorage.getItem(key)||"{}")}catch(e){}
+const list=document.getElementById("checklist"),filter=document.getElementById("filter");
+function flatten(){const out=[];groups.forEach((g,gi)=>{if(g.items)g.items.forEach((it,ii)=>out.push({it,id:`${gi}-${ii}`}));if(g.subgroups)g.subgroups.forEach((sg,si)=>sg.items.forEach((it,ii)=>out.push({it,id:`${gi}-s${si}-${ii}`})))});return out}
+function save(){try{localStorage.setItem(key,JSON.stringify(checked));document.getElementById("storageNote").textContent="Progreso guardado en este navegador."}catch(e){document.getElementById("storageNote").textContent="No se pudo guardar automáticamente; exporta el progreso."}}
+function makeItem(it,id){
+ const done=!!checked[id];
+ if(filter.value==="urgent"&&it[1]!=="urgent")return null;
+ if(filter.value==="pending"&&done)return null;
+ if(filter.value==="done"&&!done)return null;
+ const label=document.createElement("label");label.className="item"+(done?" done":"");
+ const cb=document.createElement("input");cb.type="checkbox";cb.checked=done;
+ cb.addEventListener("change",()=>{checked[id]=cb.checked;save();render()});
+ const span=document.createElement("span");span.textContent=it[0];
+ const tag=document.createElement("small");tag.className="tag "+it[1];tag.textContent=it[1]==="urgent"?"Prioridad alta":it[1]==="soon"?"Pendiente":"Opcional";
+ label.append(cb,span,tag);return label
+}
+function render(){
+ list.innerHTML="";
+ const all=flatten();const total=all.length,completed=all.filter(x=>checked[x.id]).length;
+ groups.forEach((g,gi)=>{
+  const section=document.createElement("section");section.className="group";
+  const h=document.createElement("h2");const title=document.createElement("span");title.textContent=g.title;
+  const groupItems=all.filter(x=>x.id.startsWith(`${gi}-`));
+  const count=document.createElement("span");count.className="count";count.textContent=`${groupItems.filter(x=>checked[x.id]).length}/${groupItems.length}`;
+  h.append(title,count);section.appendChild(h);
+  if(g.description){const d=document.createElement("div");d.className="subnote";d.textContent=g.description;section.appendChild(d)}
+  let shown=0;
+  if(g.subgroups)g.subgroups.forEach((sg,si)=>{
+   const sh=document.createElement("h3");sh.textContent=sg.title;section.appendChild(sh);
+   sg.items.forEach((it,ii)=>{const el=makeItem(it,`${gi}-s${si}-${ii}`);if(el){section.appendChild(el);shown++}})
+  });
+  if(g.items)g.items.forEach((it,ii)=>{const el=makeItem(it,`${gi}-${ii}`);if(el){section.appendChild(el);shown++}});
+  if(shown)list.appendChild(section);
+ });
+ document.getElementById("progressText").textContent=`${completed} de ${total} tareas (${Math.round(completed/total*100)}%)`;
+ document.getElementById("progressBar").style.width=`${completed/total*100}%`;
+}
+filter.addEventListener("change",render);
+document.getElementById("export").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify({version:2,checked},null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="progreso-everest-checklist.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+});
+document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change",async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{const data=JSON.parse(await f.text());if(!data.checked||typeof data.checked!=="object")throw Error();checked=data.checked;save();render();alert("Progreso importado correctamente.")}
+ catch(err){alert("No se pudo leer ese archivo de progreso.")}
+ e.target.value=""
+});
+document.getElementById("reset").addEventListener("click",()=>{
+ if(confirm("¿Reiniciar todas las tareas?")){checked={};save();render()}
+});
+render();
+</script>
+</body>
+</html>
